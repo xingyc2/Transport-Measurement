@@ -10,6 +10,9 @@ class MeasurementDevice:
         """
         self.visa_address = visa_address
         self.instrument = None
+        
+    def get_visa(self):
+        return visa_address
 
     def connect(self):
         """
@@ -24,7 +27,7 @@ class MeasurementDevice:
         except Exception as e:
             raise Exception(f"Failed to connect to the device: {str(e)}")
 
-    def get_values(self):
+    def get_values(self, configuration="READ?"):
         """
         Retrieve measurement values from the connected device.
 
@@ -35,7 +38,7 @@ class MeasurementDevice:
         - Exception: If there is an issue with communication or data retrieval.
         """
         try:
-            values = self.instrument.query("READ?")  # Replace with the actual command for reading values
+            values = self.instrument.query(configuration)  # Replace with the actual command for reading values
             return values
         except Exception as e:
             raise Exception(f"Failed to get values from the device: {str(e)}")
@@ -55,20 +58,22 @@ class MeasurementDevice:
             print(f"Configuration set: {configuration}")
         except Exception as e:
             raise Exception(f"Failed to set values on the device: {str(e)}")
-'''
+
     def disconnect(self):
-        ""
+        """
         Disconnect from the measurement device.
 
         Raises:
         - Exception: If there is an issue with disconnection.
-        ""
+        """
         try:
             self.instrument.close()
             print("Disconnected from the device")
         except Exception as e:
             raise Exception(f"Failed to disconnect from the device: {str(e)}")
-'''
+    
+    def get_address(self):
+        return self.visa_address
 
 if __name__ == "__main__":
     device = MeasurementDevice("GPIB0::19::INSTR")
