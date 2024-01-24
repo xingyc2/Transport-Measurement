@@ -5,8 +5,31 @@ import numpy as np
 from device import MeasurementDevice
 
 class Agilent6613C(MeasurementDevice):
-    def __init__(self, visa_address):
-        self.visa_address = visa_address
+    def initialize(self):
+        super().connect()
+        self.instument.write("*RST")
+        self.instument.write("*CLS")
+        self.instument.write("SENSe:SWEep:POINts 256")
         
-        MeasurementDevice.__init__(self, visa_address)
-        MeasurementDevice.connect(self)
+    def relay(self, rel):
+        if rel == True:
+            self.instrument.write("OUTP:REL ON")
+            self.instrument.write("OUTP:REL:POL REV")
+        else:
+            self.instrument.write("OUTP:REL ON")
+            self.instrument.write("OUTP:REL:POL NORM")
+        
+    def source_volt(self, volt):
+        self.instument.write("VOLT " + volt)
+        
+    def source_volt(self, volt):
+        self.instument.write("VOLT " + volt)
+        
+    def source_curr(self, curr):
+        self.instument.write("CURR " + curr)
+        
+    def source_curr(self, curr, volt):
+        self.instument.write("CURR " + curr + ";VOLT " + volt)
+        
+    
+        
