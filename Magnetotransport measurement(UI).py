@@ -5,14 +5,10 @@ import timeit
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-import Instr_lib as instrlib
+#import Instr_lib as instrlib
+import device
+from GPIB_instruments import Agilent6613C_PowerSupply, Agilent2400_SourceMeter
 
-rm = pyvisa.ResourceManager()
-print(rm.list_resources())
-
-# Initialize instrument object using pyvisa
-addr5 = rm.open_resource('GPIB0::5::INSTR')
-addr9 = rm.open_resource('GPIB0::9::INSTR')
-addr20 = rm.open_resource('GPIB0::20::INSTR')
-
-class transferCurve
+Agilent6613C_PowerSupply('GPIB0::5::INSTR')
+Agilent6613C_PowerSupply('GPIB0::9::INSTR')
+Agilent2400_SourceMeter('GPIB0::20::INSTR')
