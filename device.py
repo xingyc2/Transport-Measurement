@@ -55,7 +55,7 @@ class MeasurementDevice:
         """
         try:
             self.instrument.write(configuration)  # Replace with the actual command for setting values
-            print(f"Configuration set: {configuration}")
+            print(f"Config set: {configuration}")
         except Exception as e:
             raise Exception(f"Failed to set values on the device: {str(e)}")
 

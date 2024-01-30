@@ -204,7 +204,7 @@ class Agilent2400_SourceMeter(MeasurementDevice):
             print(self.get_values("SYST:ERR?"))
             raise Exception(f"Agilent2400_SourceMeter: Invalid form input: {str(e)}")
     
-    def initialize(self, scfunc, ssfunc, scmode, scrange, svrange, fe):
+    def initialize(self, scfunc="CURR", ssfunc="VOLT", scmode="LIST", scrange=0.001, svrange=10, fe="VOLT"):
         """
         Initialize the source meter with essential configs,
         including connection via pyvisa, sourcing function, sensing function, 
@@ -226,7 +226,7 @@ class Agilent2400_SourceMeter(MeasurementDevice):
         except:
             print(self.get_values("SYST:ERR?"))
     
-    def nplc(self, nplc):
+    def NPLC(self, nplc=0.03):
         try:
             self.set_values("NPLC " + str(nplc))
         except Exception as e:
