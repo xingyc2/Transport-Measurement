@@ -315,7 +315,7 @@ class Agilent2400_SourceMeter(MeasurementDevice):
             curr_input += ','+str(curr)
         return curr_input
     
-    def source_list_I(self, *curr):
+    def source_list_I(self, curr):
         """
         Set a list of output current values. 
         
@@ -329,11 +329,11 @@ class Agilent2400_SourceMeter(MeasurementDevice):
             if type(curr) == str:
                 self.set_values("SOUR:LIST:CURR " + curr)
             elif type(curr) == list:
-                self.set_values("SOUR:LIST:CURR " + str(curr)[1:-1])
+                self.set_values("SOUR:LIST:CURR " + ','.join([str(i) for i in curr]))
         except Exception as e:
             print(self.get_values("SYST:ERR?"))
             raise Exception(f"Agilent2400_SourceMeter: Invalid current input, must be either a string of values or a list of values{str(e)}")
-    
+    '''
     def source_list_I(self, *curr, pts):
         """
         Set a list of output current values. 
@@ -359,7 +359,7 @@ class Agilent2400_SourceMeter(MeasurementDevice):
         except Exception as e:
             print(self.get_values("SYST:ERR?"))
             raise Exception(f"Agilent2400_SourceMeter: Invalid current input: {str(e)}")
-    
+    '''
     def read_buffer(self):
         """
         Read the output current. 

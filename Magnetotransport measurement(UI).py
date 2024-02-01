@@ -31,19 +31,19 @@ class TransferCurve():
             return g/self.Y_magnet_GPA
 
     def initialize(self, x_address="GPIB0::5::INSTR", y_address="GPIB0::9::INSTR", sm_address="GPIB0::20::INSTR", NPLC=0.03):
-        PowerSupply_X = Agilent6613C_PowerSupply(x_address)
-        PowerSupply_Y = Agilent6613C_PowerSupply(y_address)
-        SourceMeter = Agilent2400_SourceMeter(sm_address)
+        self.PowerSupply_X = Agilent6613C_PowerSupply(x_address)
+        self.PowerSupply_Y = Agilent6613C_PowerSupply(y_address)
+        self.SourceMeter = Agilent2400_SourceMeter(sm_address)
 
-        PowerSupply_X.initialize()
-        PowerSupply_Y.initialize()
-        SourceMeter.initialize()
-        SourceMeter.NPLC()
+        self.PowerSupply_X.initialize()
+        self.PowerSupply_Y.initialize()
+        self.SourceMeter.initialize()
+        self.SourceMeter.NPLC()
     
     def output_on(self, x_onoff=True, y_onoff=False, sm_onoff=True)
-        PowerSupply_X.output(x_onoff)
-        PowerSupply_Y.output(y_onoff)
-        SourceMeter.output(sm_onoff)
+        self.PowerSupply_X.output(x_onoff)
+        self.PowerSupply_Y.output(y_onoff)
+        self.SourceMeter.output(sm_onoff)
         
     def sweep_params_gauss(self, start_gauss=0, stop_gauss=self.X_magnet_GPA, step_gauss=0.0003*X_magnet_GPA, loop=1):
         self.start_gauss = start_gauss
@@ -63,34 +63,100 @@ class TransferCurve():
         self.step_gauss = step_curr*X_magnet_GPA
         slef.loop = loop
 
-    def curr_sample(self, curr_sample=0.001, pts_repeated=2, square_wave=False):
+    def SM_curr_sample(self, curr_sample=0.001, pts_repeated=2, square_wave=False):
         try:
             if square_wave == True:
                 self.curr_sample_arr = np.repeat([curr_sample, -curr_sample],(pts_repeated))
             elif square_wave == False:
                 self.curr_sample_arr = np.repeat(curr_sample, (pts_repeated))
             else:
-                raise Exception()
+                raise Exception(f"TransferCurve: Invalid current sample input: {str(e)}")
+            curr_input = ''
+            for i in self.curr_sample_arr:
+                curr_input += ','+str(curr_sample)
+            return curr_input[1:]
         except Exception as e:
             raise Exception(f"TransferCurve: Invalid current sample input: {str(e)}")
-            
-    '''
-    def bias_y_arr(self, bias_ON=False):
+    
+    def bias_y(self, bias_gauss=0, bias_ON=False):
         try:
-            PowerSupply_Y.output(bias_ON)
+            if bias_ON == True:
+                self.PowerSupply_Y.source_I(bias_value)
+                self.PowerSupply_Y.output(True)
+            elif bias_ON == False:
+                self.PowerSupply_Y.output(False)
+            else:
+                raise Exception(f"TransferCurve: Invalid biasing field(gauss) input: {str(e)}")
         except Exception as e:
-            raise Exception(f"TransferCurve: Invalid biasing Y field input: {str(e)}")
+            raise Exception(f"TransferCurve: Invalid biasing field(gauss) input: {str(e)}")
+    
+    def sweep_seq(start, stop, step):
+        seq_asc = np.arange(start, stop, step)[0:-1]
+        seq_desc = np.arange(stop, start, -step)[0:-1]
+        return np.concatenate((seq_asc, seq_desc))
+    
+    def curr_seq(self):
+        seq_asc = np.arange(self.min_curr, self.max_curr, self.step)
+        seq_desc = np.arange(self.max_curr, self.min_curr, -self.step)
+        seq_1 = np.concatenate((self.sweep_seq(self.min_curr, self.max_curr, self.step), self.sweep_seq(-self.min_curr, -self.ax_curr, -self.step)))
+        seq = []
+        for i in range(loop):
+            seq = np.concatenate((seq, seq_1))
+        seq = np.concatenate((seq, seq_asc))
+        return seq
+    
+    
+    
+    
+    
+    
+    
+    def measure_transfer_curve(MTJ_operating_current, bias_gauss, bias_ON):
+        # Volt Compliance
         
-    def bias_y_arr(self, bias_ON=True, y_arr_gauss):
+        # Bias Y field
+        self.bias_y(bias_gauss, bias_ON)
+        
+        # Create current sequence
+        curr_input = self.SM_curr_sample()
+        # SM set input value
+        seq = self.curr_seq()
+        # Preloop variables
+        
+        # Start plotting
+        
+        # Start timing
+        # Execute loop 
+            # Check relay
+            # Check compliance
+            # PS source and measure
+            # SM source and measure
+            # Concatenate data
+            # Collect time stamps
+            # Calculate resistance results
+            # Plot real-time 
+        # Stop timing 
+        # Render data 
+        # Final plot
+        
+    
+    
+    
+    
+    
+    
+    
+    
+    def bias_y(self, y_gauss, bias_ON=True):
         try:
             if bias_ON == True:
                 PowerSupply_Y.output(bias_ON)
-                
+                '''
+                '''
             else:
                 PowerSupply_Y.output(False)
         except Exception as e:
             raise Exception(f"TransferCurve: Invalid biasing Y field input: {str(e)}")
-        '''
     
     def 
     
