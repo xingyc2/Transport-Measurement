@@ -3,8 +3,12 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 from device import MeasurementDevice
+import time
 
 class Agilent6613C_PowerSupply(MeasurementDevice):
+    self.volt = 0
+    self.curr = 0
+    
     def initialize(self):
         """
         Initialize the power supply with essential configs,
@@ -73,8 +77,9 @@ class Agilent6613C_PowerSupply(MeasurementDevice):
         Raises:
         - Exception: Invalid input of voltage parameter or communication issue.
         """
+        self.volt = volt
         try:
-            if volt < 51 and volt >= 0:
+            if volt <= 51 and volt >= 0:
                 self.set_values("VOLT " + str(volt))
             else:
                 print(f"Agilent6613C_PowerSupply: Output voltage exceeds limitation.")
@@ -92,6 +97,7 @@ class Agilent6613C_PowerSupply(MeasurementDevice):
         Raises:
         - Exception: Invalid input of current parameter or communication issue.
         """
+        self.curr = curr
         try:
             if curr < 0:
                 self.relay(True)
@@ -122,7 +128,24 @@ class Agilent6613C_PowerSupply(MeasurementDevice):
             print(self.get_values("SYST:ERR?"))
             raise Exception(f"Agilent6613C_PowerSupply: Invalid voltage or current input: {str(e)}")
             
-    def read_I(self):
+    def compliance_level(self):
+        if (abs(self.curr) > 0.015) and (self.volt != 51):
+            self.set_values("VOLT 51")
+            self.volt = 51
+            time.sleep(.3)
+            #time.sleep(.1)
+        elif (abs(self.curr) > 0.001) and (abs(self.curr) < 0.015) and (self.volt != 1):
+            self.set_values("VOLT 1")
+            self.volt = 1
+            time.sleep(.3)
+            #time.sleep(.1)
+        elif (abs(self.curr) < 0.001) and (self.volt != 0.05):
+            self.set_values("VOLT 0.05")
+            self.volt = 0.05
+            time.sleep(.3)
+            #time.sleep(.1)
+    
+    def read_I(self, in_float):
         """
         Read the output current. 
         
@@ -130,7 +153,11 @@ class Agilent6613C_PowerSupply(MeasurementDevice):
         - Exception: If any issues with communication or data retrieval occur.
         """
         try:
-            self.get_values("MEAS:CURR?")
+            result = self.get_values("MEAS:CURR?")
+            if in_float == True:
+                return float(result)
+            else:
+                return self.get_values("MEAS:CURR?")
         except Exception as e:
             print(self.get_values("SYST:ERR?"))
             raise Exception(f"Failed to read current from the Agilent6613C_PowerSupply: {str(e)}")
