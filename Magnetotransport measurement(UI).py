@@ -11,15 +11,24 @@ from GPIB_instruments import Agilent6613C_PowerSupply, Agilent2400_SourceMeter
 
 class TransferCurve():
     
-    def __init__(self):
+    # Initialize instruments and parameters
+    def __init__(self, NPLC=0.03):
         self.X_magnet_GPA = 132.3129
         self.Y_magnet_GPA = 129.76684
         self.max_curr_PS = 1
+        self.default_loop = 1
+        self.default_curr_step = 0.0003
+        self.default_gauss_start = 0
+        self.default_gauss_stop = self.X_magnet_GPA
+        self.default_MTJ_operating_curr = 0.001
+        self.default_cycle_length = 2
+        self.default_bias_gauss = 0
+        self.default_square_wave = False
         
-        x_address="GPIB0::5::INSTR"
-        y_address="GPIB0::9::INSTR"
-        sm_address="GPIB0::20::INSTR"
-        NPLC=0.03
+        self.x_address="GPIB0::5::INSTR"
+        self.y_address="GPIB0::9::INSTR"
+        self.sm_address="GPIB0::20::INSTR"
+        self.NPLC=NPLC
         self.PowerSupply_X = Agilent6613C_PowerSupply(x_address)
         self.PowerSupply_Y = Agilent6613C_PowerSupply(y_address)
         self.SourceMeter = Agilent2400_SourceMeter(sm_address)
@@ -31,54 +40,66 @@ class TransferCurve():
         
         self.plotter = PlotCanvas()
     
+    # Ampere/Gauss conversion
     def a_to_g(self, a, GPA='X'):
         if GPA == 'X':
             return a*self.X_magnet_GPA
         elif GPA == 'Y':
             return a*self.X_magnet_GPA
-    
+            
+    # Gauss/Ampere conversion
     def g_to_a(self, g, GPA='Y'):
         if GPA == 'X':
             return g/self.Y_magnet_GPA
         elif GPA == 'Y':
             return g/self.Y_magnet_GPA
     
+    # Output controls
     def output_on(self, x_onoff=True, y_onoff=False, sm_onoff=True)
         self.PowerSupply_X.output(x_onoff)
         self.PowerSupply_Y.output(y_onoff)
         self.SourceMeter.output(sm_onoff)
-        
-    def sweep_params_gauss(self, start_gauss=0, stop_gauss=self.X_magnet_GPA, step_gauss=0.0003*X_magnet_GPA, loop=1):
+    
+    # Power Supply params
+    # (In gauss)
+    def PS_params_gauss(self, start_gauss=self.default_gauss_start, stop_gauss=self.X_magnet_GPA, step_gauss=self.a_to_g(self.default_curr_step), loop=self.default_loop):
         self.start_gauss = start_gauss
         self.stop_gauss = stop_gauss
         self.step_gauss = step_gauss
-        self.start_curr = start_gauss/X_magnet_GPA
-        self.stop_curr = stop_gauss/X_magnet_GPA
-        self.step_curr = step_gauss/X_magnet_GPA
-        slef.loop = loop
+        self.start_curr = self.g_to_a(start_gauss)
+        self.stop_curr = self.g_to_a(stop_gauss)
+        self.step_curr = self.g_to_a(step_gauss)
+        self.loop = loop
         
-    def sweep_params_amps(self, start_curr=0, stop_curr=self.max_curr_PS, step_curr=0.0003, loop=1):
+    # (In amps)
+    def PS_params_amps(self, start_curr=self.default_curr_start, stop_curr=self.max_curr_PS, step_curr=self.default_curr_step, loop=self.default_loop):
         self.start_curr = start_curr
         self.stop_curr = stop_curr
         self.step_curr = step_curr
-        self.start_gauss = start_curr*X_magnet_GPA
-        self.stop_gauss = stop_curr*X_magnet_GPA
-        self.step_gauss = step_curr*X_magnet_GPA
+        self.start_gauss = self.a_to_g(start_curr)
+        self.stop_gauss = self.a_to_g(stop_curr)
+        self.step_gauss = self.a_to_g(step_curr)
         slef.loop = loop
-
-    def SM_curr_sample(self, curr_sample=0.001, pts_repeated=2, square_wave=False):
-        if square_wave == True:
-            self.curr_sample_arr = np.repeat([curr_sample, -curr_sample],(pts_repeated))
-        elif square_wave == False:
-            self.curr_sample_arr = np.repeat(curr_sample, (pts_repeated))
-        else:
-            raise Exception(f"TransferCurve: Invalid current sample input: {str(e)}")
-        curr_input = ''
-        for i in self.curr_sample_arr:
-            curr_input += ','+str(curr_sample)
-        return curr_input[1:]
+        
+    # Power Supply sequence for one back and forth sweeping
+    def PS_sweep_seq(start, stop, step):
+        seq_asc = np.arange(start, stop, step)[0:-1]
+        seq_desc = np.arange(stop, start, -step)[0:-1]
+        return np.concatenate((seq_asc, seq_desc))
     
-    def bias_y(self, bias_gauss=0, bias_ON=False):
+    #
+    def PS_curr_seq(self):
+        seq_asc = np.arange(self.min_curr, self.max_curr, self.step)
+        seq_desc = np.arange(self.max_curr, self.min_curr, -self.step)
+        seq_1 = np.concatenate((self.PS_sweep_seq(self.min_curr, self.max_curr, self.step), self.PS_sweep_seq(-self.min_curr, -self.ax_curr, -self.step)))
+        seq = []
+        for i in range(loop):
+            seq = np.concatenate((seq, seq_1))
+        seq = np.concatenate((seq, seq_asc))
+        return seq
+    
+    # Biasing field control
+    def bias_y(self, bias_ON=True, bias_gauss=default_bias_gauss):
         if bias_ON == True:
             self.PowerSupply_Y.source_I(bias_value)
             self.PowerSupply_Y.output(True)
@@ -86,43 +107,57 @@ class TransferCurve():
             self.PowerSupply_Y.output(False)
         else:
             raise Exception(f"TransferCurve: Invalid biasing field(gauss) input: {str(e)}")
-    
-    def sweep_seq(start, stop, step):
-        seq_asc = np.arange(start, stop, step)[0:-1]
-        seq_desc = np.arange(stop, start, -step)[0:-1]
-        return np.concatenate((seq_asc, seq_desc))
-    
-    def curr_seq(self):
-        seq_asc = np.arange(self.min_curr, self.max_curr, self.step)
-        seq_desc = np.arange(self.max_curr, self.min_curr, -self.step)
-        seq_1 = np.concatenate((self.sweep_seq(self.min_curr, self.max_curr, self.step), self.sweep_seq(-self.min_curr, -self.ax_curr, -self.step)))
-        seq = []
-        for i in range(loop):
-            seq = np.concatenate((seq, seq_1))
-        seq = np.concatenate((seq, seq_asc))
-        return seq
-    
-    def measure_single_point(self, curr):
-        PowerSupply_X.source_I(curr)
-        curr_read = PowerSupply_X.read_I(True)
-        print(curr_read)
-        curr_arr.append(curr_read)
+
+    # Sourcemeter params
+    def SM_curr_sample(self, curr_sample=self.default_MTJ_operating_curr, pts_repeated=self.default_cycle_length, square_wave=self.default_square_wave):
+        if square_wave == True:
+            MTJ_curr_arr = np.repeat([curr_sample, -curr_sample],(pts_repeated))
+        elif square_wave == False:
+            MTJ_curr_arr = np.repeat(curr_sample, (pts_repeated))
+        else:
+            raise Exception(f"TransferCurve: Invalid current sample input: {str(e)}")
+        return MTJ_curr_arr
     
     
+    def measure_single_point(self, EM_curr):
+        PowerSupply_X.compliance_level(EM_curr)
+        PowerSupply_X.source_I(EM_curr)
+        curr_PS_read = PowerSupply_X.read_I()
+        print(curr_PS_read)
+        volt_arr_SM_read = SourceMeter.read_buffer()
+        print(volt_arr_SM_read)
+        if self.default_square_wave == False:
+            volt_SM_read = sum(volt_arr_SM_read)/len(volt_arr_SM_read)
+        else:
+            volt_SM_read = (sum(volt_arr_SM_read[0::2]) - sum(volt_arr_SM_read[1::2])) / len(volt_arr_SM_read)
+        return curr_PS_read, volt_SM_read
+            
+    def 
+
+
     
     
     
-    def measure_transfer_curve(MTJ_operating_current, bias_gauss, bias_ON):
+    def measure_transfer_curve(self, start_gauss=self.default_gauss_start, stop_gauss=self.X_magnet_GPA, step_gauss=self.a_to_g(self.default_curr_step), loop=self.default_loop,
+                               MTJ_operating_curr=self.default_MTJ_operating_curr, cycle_length=default_cycle_length,
+                               bias_gauss=default_bias_gauss, bias_ON=False):
         # Volt Compliance
+        PowerSupply_X.source_I(0.1)
         
         # Bias Y field
-        self.bias_y(bias_gauss, bias_ON)
+        self.bias_y(0, False)
         
         # Create current sequence
         curr_input = self.SM_curr_sample()
+        
+        # PS initialize
+        PS_params_gauss()
+        
         # SM set input value
-        seq = self.curr_seq()
+        SourceMeter.source_list_I(SM_curr_sample())
         # Preloop variables
+        
+        seq = self.PS_curr_seq()
         curr_arr = []
         # Start plotting
         

@@ -132,7 +132,8 @@ class Agilent6613C_PowerSupply(MeasurementDevice):
         if (abs(self.curr) > 0.015) and (self.volt != 51):
             self.set_values("VOLT 51")
             self.volt = 51
-            time.sleep(.3)
+            time.slee
+            p(.3)
             #time.sleep(.1)
         elif (abs(self.curr) > 0.001) and (abs(self.curr) < 0.015) and (self.volt != 1):
             self.set_values("VOLT 1")
@@ -140,12 +141,12 @@ class Agilent6613C_PowerSupply(MeasurementDevice):
             time.sleep(.3)
             #time.sleep(.1)
         elif (abs(self.curr) < 0.001) and (self.volt != 0.05):
-            self.set_values("VOLT 0.05")
+            self.set_values("VOLT 0.1")
             self.volt = 0.05
             time.sleep(.3)
             #time.sleep(.1)
     
-    def read_I(self, in_float):
+    def read_I(self, in_float=True):
         """
         Read the output current. 
         
@@ -357,9 +358,11 @@ class Agilent2400_SourceMeter(MeasurementDevice):
                 self.set_values("SOUR:LIST:CURR " + curr)
             elif type(curr) == list:
                 self.set_values("SOUR:LIST:CURR " + ','.join([str(i) for i in curr]))
+                self.trigger_count(len(curr))
         except Exception as e:
             print(self.get_values("SYST:ERR?"))
             raise Exception(f"Agilent2400_SourceMeter: Invalid current input, must be either a string of values or a list of values{str(e)}")
+    
     '''
     def source_list_I(self, *curr, pts):
         """
@@ -387,6 +390,10 @@ class Agilent2400_SourceMeter(MeasurementDevice):
             print(self.get_values("SYST:ERR?"))
             raise Exception(f"Agilent2400_SourceMeter: Invalid current input: {str(e)}")
     '''
+    
+    def str_float(raw, sep=','):
+        return [float(i) for i in raw.split(sep)]
+    
     def read_buffer(self):
         """
         Read the output current. 
@@ -395,7 +402,7 @@ class Agilent2400_SourceMeter(MeasurementDevice):
         - Exception: If any issues with communication or data retrieval occur.
         """
         try:
-            self.get_values("READ?")
+            return str_float(self.get_values("READ?"))
         except Exception as e:
             print(self.get_values("SYST:ERR?"))
             raise Exception(f"Agilent2400_SourceMeter: Failed to read buffer: {str(e)}")
