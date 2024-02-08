@@ -6,8 +6,6 @@ from device import MeasurementDevice
 import time
 
 class Agilent6613C_PowerSupply(MeasurementDevice):
-    self.volt = 0
-    self.curr = 0
     
     def initialize(self):
         """
@@ -22,6 +20,8 @@ class Agilent6613C_PowerSupply(MeasurementDevice):
             self.set_values("*RST")
             self.set_values("*CLS")
             self.set_values("SENSe:SWEep:POINts 256")
+            self.volt = 0
+            self.curr = 0
         except:
             print(self.get_values("SYST:ERR?"))
             
@@ -179,6 +179,9 @@ class Agilent6613C_PowerSupply(MeasurementDevice):
         
     
 class Agilent2400_SourceMeter(MeasurementDevice):
+    def str_float(raw, sep=','):
+        return [float(i) for i in raw.split(sep)]
+        
     def source_func(self, func="CURR"):
         try:
             if func == "CURR":
@@ -355,8 +358,11 @@ class Agilent2400_SourceMeter(MeasurementDevice):
         """
         try:
             if type(curr) == str:
+                print('str')
                 self.set_values("SOUR:LIST:CURR " + curr)
+                self.trigger_count(len(str_float(curr)))
             elif type(curr) == list:
+                print('list')
                 self.set_values("SOUR:LIST:CURR " + ','.join([str(i) for i in curr]))
                 self.trigger_count(len(curr))
         except Exception as e:
@@ -391,8 +397,6 @@ class Agilent2400_SourceMeter(MeasurementDevice):
             raise Exception(f"Agilent2400_SourceMeter: Invalid current input: {str(e)}")
     '''
     
-    def str_float(raw, sep=','):
-        return [float(i) for i in raw.split(sep)]
     
     def read_buffer(self):
         """
@@ -402,8 +406,17 @@ class Agilent2400_SourceMeter(MeasurementDevice):
         - Exception: If any issues with communication or data retrieval occur.
         """
         try:
-            return str_float(self.get_values("READ?"))
+            return self.str_float(self.get_values("READ?"))
         except Exception as e:
             print(self.get_values("SYST:ERR?"))
             raise Exception(f"Agilent2400_SourceMeter: Failed to read buffer: {str(e)}")
             
+            
+if __name__ == "__main__":
+    try:
+        ps1 = Agilent6613C_PowerSupply('GPIB0::5::INSTR' )
+        ps2 = Agilent6613C_PowerSupply('GPIB0::9::INSTR' )
+        sm = Agilent2400_SourceMeter('GPIB0::20::INSTR' )
+    
+    except Exception as e:
+        print(f"Error: {str(e)}")
