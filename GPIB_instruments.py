@@ -22,6 +22,7 @@ class Agilent6613C_PowerSupply(MeasurementDevice):
             self.set_values("SENSe:SWEep:POINts 256")
             self.volt = 0
             self.curr = 0
+            self.rel = 1
         except:
             print(self.get_values("SYST:ERR?"))
             
@@ -60,9 +61,11 @@ class Agilent6613C_PowerSupply(MeasurementDevice):
             if rel == True:
                 self.set_values("OUTP:REL ON")
                 self.set_values("OUTP:REL:POL REV")
+                self.rel = -1
             else:
                 self.set_values("OUTP:REL ON")
                 self.set_values("OUTP:REL:POL NORM")
+                self.rel = 1
         except Exception as e:
             print(self.get_values("SYST:ERR?"))
             raise Exception(f"Agilent6613C_PowerSupply: Invalid relay input: {str(e)}")
@@ -132,8 +135,7 @@ class Agilent6613C_PowerSupply(MeasurementDevice):
         if (abs(self.curr) > 0.015) and (self.volt != 51):
             self.set_values("VOLT 51")
             self.volt = 51
-            time.slee
-            p(.3)
+            time.sleep(.3)
             #time.sleep(.1)
         elif (abs(self.curr) > 0.001) and (abs(self.curr) < 0.015) and (self.volt != 1):
             self.set_values("VOLT 1")
@@ -156,7 +158,7 @@ class Agilent6613C_PowerSupply(MeasurementDevice):
         try:
             result = self.get_values("MEAS:CURR?")
             if in_float == True:
-                return float(result)
+                return self.rel*float(result)
             else:
                 return self.get_values("MEAS:CURR?")
         except Exception as e:
@@ -179,7 +181,7 @@ class Agilent6613C_PowerSupply(MeasurementDevice):
         
     
 class Agilent2400_SourceMeter(MeasurementDevice):
-    def str_float(raw, sep=','):
+    def str_float(self, raw, sep=','):
         return [float(i) for i in raw.split(sep)]
         
     def source_func(self, func="CURR"):
@@ -358,12 +360,11 @@ class Agilent2400_SourceMeter(MeasurementDevice):
         """
         try:
             if type(curr) == str:
-                print('str')
                 self.set_values("SOUR:LIST:CURR " + curr)
-                self.trigger_count(len(str_float(curr)))
-            elif type(curr) == list:
-                print('list')
-                self.set_values("SOUR:LIST:CURR " + ','.join([str(i) for i in curr]))
+                self.trigger_count(len(self.str_float(curr)))
+            else:
+                c = ','.join([str(i) for i in curr])
+                self.set_values("SOUR:LIST:CURR " + c)
                 self.trigger_count(len(curr))
         except Exception as e:
             print(self.get_values("SYST:ERR?"))
