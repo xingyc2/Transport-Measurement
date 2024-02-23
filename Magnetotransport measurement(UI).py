@@ -118,6 +118,7 @@ class TransferCurve():
     def PS_curr_seq(self):
         seq_asc = np.arange(self.start_curr, self.start_curr, self.step_curr)
         seq_desc = np.arange(self.stop_curr, self.start_curr, -self.step_curr)
+        
         seq_1 = np.concatenate((self.PS_sweep_seq(self.start_curr, self.stop_curr, self.step_curr), self.PS_sweep_seq(-self.start_curr, -self.stop_curr, -self.step_curr)))
         seq = []
         for i in range(self.loop):
@@ -176,7 +177,7 @@ class TransferCurve():
             volt_SM_read = sum(volt_arr_SM_read)/len(volt_arr_SM_read)
         return curr_PS_read, volt_SM_read
             
-    def render_data(self, i, v, r, t):
+    def render_data(self, t, i, v, r):
         data = np.vstack((t, i, v, r)).T
         df = pd.DataFrame(data)
         df.to_csv(self.my_path + '/Data/Transfer curve Raw data max_G ' + str(self.stop_gauss) + ', Biasing_y ' + str(self.bias_gauss) + '.csv', index=False, header=False)
@@ -235,8 +236,7 @@ class TransferCurve():
         # Final plot
         
         self.output_on(False, False, False)
-        return curr_arr, volt_arr, resist_arr, time_arr
-    
+        return time_arr, curr_arr, volt_arr, resist_arr
     
     
     
@@ -244,14 +244,21 @@ class TransferCurve():
 
 class PlotCanvas(FigureCanvas):
     def __init__(self, parent=None, width=8, height=6, dpi=100):
-        fig, self.axes = plt.subplots(figsize=(width, height), dpi=dpi)
-        super().__init__(fig)
-        self.setParent(parent)
+        self.fig, self.axes = plt.subplots(figsize=(width, height), dpi=dpi)
+        super().__init__(self.fig)
+        
+    def read_data(self, tc, file_name="Transfer curve Raw data max_G 132.3129, Biasing_y 0.csv"):
+        self.file_name = file_name
+        data = np.loadtxt(tc.my_path + '/Data/' + file_name, delimiter=",", dtype=float)
+        return data[:, 0], data[:, 1], data[:, 2], data[:, 3]
         
     def plot_scatter(self, x, y):
-        self.axes.clear()
-        self.axes.polt(x, y)
-        _addressself.axes.set.xlalbel
+        plt.scatter(x, y, s=1)
+        self.axes.set(xlabel='Magnetic field (G)', ylabel='Resistance (Ohm)',
+                title='Magnetic field vs Resistance')
+        self.axes.grid()
+        #plt.title(self.file_name)
+        plt.show()
         
     #def plot_point_and_update():
 
@@ -309,18 +316,31 @@ class LinePlotterApp(QWidget):
 
 if __name__ == "__main__":
     try:
-        app = QApplication(sys.argv)
-        window = LinePlotterApp()
+        #app = QApplication(sys.argv)
+        #window = LinePlotterApp()
         TC = TransferCurve()
-        #I, V, R, T = TC.measure_transfer_curve(start_gauss=0, stop_gauss=10, step_gauss=1)
-        I = [0, 1]
-        V = [0, 1]
-        R = [0, 1]
-        T = [0, 1]
+        '''
+        Transfer Curve measurement parameters:
+        
+        start_gauss (float):            default = 0, 
+        stop_gauss (float):             default = 132.3129(X_magnet_GPA),
+        step_gauss (float):             default = 0.3 mA * 132.3129 GPA = 0.0397 G = 3.97 µT, 
+        loop (int):                     default = 1, 
+        MTJ_operating_curr (float):     default = 0.001 mA, 
+        cycle_length (float):           default = 2, 
+        square_wave (boolean):          default = False, 
+        bias_gauss (float):             default = 0, 
+        bias_ON (float):                default = 0
+        '''
+        #T, I, V, R = TC.measure_transfer_curve(loop=3)
+        
+        curve = PlotCanvas()
+        T, I, V, R = curve.read_data(TC)
         print(I)
         print(V)
         print(R)
         print(T)
-        window.show()
+        curve.plot_scatter(I, R)
+        #window.show()
     except Exception as e:
         print(f"Error: {str(e)}")
