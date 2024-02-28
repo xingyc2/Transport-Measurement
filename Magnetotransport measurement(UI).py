@@ -109,7 +109,7 @@ class TransferCurve():
         else: self.loop = loop
         
     # Power Supply sequence for one back and forth sweeping
-    def PS_sweep_seq(self, start, stop, step):
+    def half_loop(self, start, stop, step):
         seq_asc = np.arange(start, stop, step)[0:-1]
         seq_desc = np.arange(stop, start, -step)[0:-1]
         return np.concatenate((seq_asc, seq_desc))
@@ -118,8 +118,7 @@ class TransferCurve():
     def PS_curr_seq(self):
         seq_asc = np.arange(self.start_curr, self.start_curr, self.step_curr)
         seq_desc = np.arange(self.stop_curr, self.start_curr, -self.step_curr)
-        
-        seq_1 = np.concatenate((self.PS_sweep_seq(self.start_curr, self.stop_curr, self.step_curr), self.PS_sweep_seq(-self.start_curr, -self.stop_curr, -self.step_curr)))
+        seq_1 = np.concatenate((self.half_loop(self.start_curr, self.stop_curr, self.step_curr), self.half_loop(-self.start_curr, -self.stop_curr, -self.step_curr)))
         seq = []
         for i in range(self.loop):
             seq = np.concatenate((seq, seq_1))
@@ -183,8 +182,7 @@ class TransferCurve():
         df.to_csv(self.my_path + '/Data/Transfer curve Raw data max_G ' + str(self.stop_gauss) + ', Biasing_y ' + str(self.bias_gauss) + '.csv', index=False, header=False)
 
     
-    
-    def measure_transfer_curve(self, start_gauss=None, stop_gauss=None, step_gauss=None, loop=None,
+    def measure_transfer_curve_amp(self, start_curr=None, stop_curr=None, step_curr=None, loop=None,
                                MTJ_operating_curr=None, cycle_length=None, square_wave=None,
                                bias_gauss=None, bias_ON=False):
         # Volt Compliance
@@ -197,7 +195,8 @@ class TransferCurve():
         curr_input = self.SM_MTJ_curr(MTJ_operating_curr, cycle_length, square_wave)
         
         # PS initialize
-        self.PS_params_gauss(start_gauss, stop_gauss, step_gauss, loop)
+        if self.start_curr == None:
+            self.PS_params_gauss(start_curr, stop_curr, step_curr, loop)
         
         # SM set input value
         self.SourceMeter.source_list_I(curr_input)
@@ -239,6 +238,10 @@ class TransferCurve():
         return time_arr, curr_arr, volt_arr, resist_arr
     
     
+    def measure_transfer_curve_gauss(self, start_gauss=None, stop_gauss=None, step_gauss=None, loop=None,
+                               MTJ_operating_curr=None, cycle_length=None, square_wave=None,
+                               bias_gauss=None, bias_ON=False):
+        self.measure_transfer_curve_amp(self.g_to_a(start_gauss), self.g_to_a(stop_gauss), self.g_to_a(step_gauss), loop, MTJ_operating_curr, cycle_length, square_wave, bias_gauss, bias_ON)
     
     
 
@@ -330,9 +333,10 @@ if __name__ == "__main__":
         cycle_length (float):           default = 2, 
         square_wave (boolean):          default = False, 
         bias_gauss (float):             default = 0, 
-        bias_ON (float):                default = 0
+        bias_ON (boolean):              default = False.
         '''
-        #T, I, V, R = TC.measure_transfer_curve(loop=3)
+        TC.PS_params_amps(start_curr=0, stop_curr=0.1, stop_curr=0.01, loop=1)
+        T, I, V, R = TC.measure_transfer_curve_amp()
         
         curve = PlotCanvas()
         T, I, V, R = curve.read_data(TC)
