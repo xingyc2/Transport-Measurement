@@ -1,0 +1,4 @@
+[/dev7173/oscs, /dev7173/demods, /dev7173/extrefs, /dev7173/triggers, /dev7173/status, /dev7173/stats, /dev7173/auxins, /dev7173/scopes, 
+/dev7173/dios, /dev7173/sigins, /dev7173/currins, /dev7173/sigouts, /dev7173/system, /dev7173/features, /dev7173/auxouts, /dev7173/tu, /dev7173/clockbase]
+[/dev7173/demods/0/adcselect, /dev7173/demods/0/order, /dev7173/demods/0/rate, /dev7173/demods/0/oscselect, /dev7173/demods/0/harmonic, /dev7173/demods/0/phaseshift, 
+/dev7173/demods/0/sinc, /dev7173/demods/0/timeconstant, /dev7173/demods/0/enable, /dev7173/demods/0/freq, /dev7173/demods/0/trigger, /dev7173/demods/0/phaseadjust, /dev7173/demods/0/sample]

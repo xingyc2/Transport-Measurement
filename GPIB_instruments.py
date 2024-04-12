@@ -222,7 +222,7 @@ class Agilent2400_SourceMeter(MeasurementDevice):
             print(self.get_values("SYST:ERR?"))
             raise Exception(f"Agilent2400_SourceMeter: Invalid source current range input: {str(e)}")
     
-    def sense_volt_range(self, volt_range=10):
+    def sense_volt_range(self, volt_range=2):
         try:
             self.set_values("SENS:VOLT:RANG " + str(volt_range))
             self.volt_range = volt_range
